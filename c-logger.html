@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🗃️ CHANGELOG REVIEWER</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Host+Grotesk:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-base: #050506;
+  --panel-bg: rgba(18, 18, 22, 0.88);
+  --border: #2a2a32;
+  --border-hl: #4a4a55;
+  --txt: #e2e2e5;
+  --txt-dim: #70707a;
+  --accent: #d6ff00;
+  --accent-rgb: 214, 255, 0;
+  --alert: #ff003c;
+  --create: #d6ff00;
+  --modify: #e2e2e5;
+  --delete: #ff003c;
+  --rename: #70b0ff;
+  --note: #d6ff00;
+  --font: 'Host Grotesk', 'JetBrains Mono', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg-base);
+  background-image: radial-gradient(circle at 50% 50%, #111116 0%, #000 100%);
+  color: var(--txt);
+  font-family: var(--font);
+  font-weight: 300;
+  font-size: 11px;
+  text-transform: uppercase;
+  min-height: 100vh;
+  padding: 1.5vw;
+}
+.wrap { max-width: 1480px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
+
+.panel {
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  border-radius: 14px 2px 14px 2px;
+  padding: 12px 14px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 6px 24px rgba(0,0,0,0.5);
+}
+.panel:hover { border-color: var(--border-hl); }
+
+.p-header {
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 10px;
+}
+.brand { display: flex; align-items: baseline; gap: 10px; }
+.brand h1 { font-size: 18px; font-weight: 500; letter-spacing: 2px; }
+.badge {
+  background: var(--accent); color: #000; padding: 2px 6px;
+  font-weight: 500; border-radius: 3px 0 3px 0; font-size: 9px;
+}
+.hud-title {
+  display: block; font-size: 10px; font-weight: 400; color: var(--txt-dim);
+  border-bottom: 1px solid var(--border); padding-bottom: 4px; margin-bottom: 10px;
+  letter-spacing: 1.5px;
+}
+
+.controls { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.btn {
+  background: rgba(0,0,0,0.5); border: 1px solid var(--border-hl); color: var(--txt);
+  padding: 5px 11px; font-family: var(--font); font-size: 10px; font-weight: 400;
+  border-radius: 5px; cursor: pointer; transition: all 0.15s; text-transform: uppercase;
+}
+.btn:hover { border-color: var(--accent); color: var(--accent); }
+.btn.accent { background: var(--accent); color: #000; font-weight: 500; }
+.btn.accent:hover { filter: brightness(1.08); color: #000; border-color: var(--accent); }
+.btn.alert { background: transparent; border-color: var(--alert); color: var(--alert); }
+.btn.alert:hover { background: var(--alert); color: #000; }
+
+.readout {
+  border: 1px solid var(--border); padding: 3px 7px; border-radius: 3px;
+  background: rgba(0,0,0,0.35); color: var(--txt-dim); font-size: 9px; font-weight: 400;
+}
+.readout.hl { color: var(--accent); border-color: var(--border-hl); font-variant-numeric: tabular-nums; }
+
+textarea {
+  width: 100%; min-height: 100px; resize: vertical;
+  background: #000; border: 1px solid var(--border); border-radius: 7px 2px 7px 2px;
+  color: var(--txt); padding: 10px; font-family: var(--font); font-size: 10px;
+  font-weight: 300; text-transform: none; outline: none;
+}
+textarea:focus { border-color: var(--border-hl); }
+textarea::placeholder { color: var(--txt-dim); text-transform: uppercase; letter-spacing: 1px; }
+
+.file-row { display: flex; gap: 8px; align-items: center; margin-top: 8px; flex-wrap: wrap; }
+.file-wrap { position: relative; }
+.file-wrap input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
+.chip {
+  background: transparent; border: 1px solid transparent; color: var(--txt-dim);
+  padding: 3px 9px; cursor: pointer; font-family: var(--font); font-size: 9px;
+  font-weight: 400; border-radius: 3px; text-transform: uppercase; user-select: none;
+}
+.chip.on {
+  background: rgba(var(--accent-rgb), 0.12);
+  border-color: var(--accent); color: var(--accent);
+}
+.chip input { display: none; }
+
+.metrics-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 6px; margin-top: 4px;
+}
+.metric {
+  display: flex; justify-content: space-between; align-items: center;
+  background: rgba(0,0,0,0.3); padding: 5px 8px; border-radius: 3px;
+  border: 1px solid var(--border);
+}
+.metric .k { color: var(--txt-dim); font-size: 9px; }
+.metric .v { font-weight: 500; font-variant-numeric: tabular-nums; font-size: 11px; }
+.metric .v.create { color: var(--create); }
+.metric .v.modify { color: var(--modify); }
+.metric .v.delete { color: var(--delete); }
+.metric .v.rename { color: var(--rename); }
+.metric .v.accent { color: var(--accent); }
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 10px;
+}
+.folder-panel {
+  background: rgba(0,0,0,0.35);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px;
+  display: flex; flex-direction: column; min-height: 0;
+}
+.folder-panel:hover { border-color: var(--border-hl); }
+.folder-head {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  gap: 8px; margin-bottom: 8px; padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+.folder-path {
+  font-size: 10px; font-weight: 500; letter-spacing: 0.5px;
+  word-break: break-all; text-transform: none; color: var(--txt);
+}
+.pills { display: flex; flex-wrap: wrap; gap: 3px; flex-shrink: 0; }
+.pill {
+  font-size: 8px; font-weight: 500; padding: 2px 5px; border-radius: 2px;
+  border: 1px solid var(--border); color: var(--txt-dim);
+}
+.pill.create { color: var(--create); border-color: rgba(var(--accent-rgb), 0.35); }
+.pill.delete { color: var(--delete); border-color: rgba(255,0,60,0.35); }
+.pill.rename { color: var(--rename); border-color: rgba(112,176,255,0.35); }
+
+.ev-list {
+  list-style: none; max-height: 200px; overflow-y: auto;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.ev-list li {
+  display: grid; grid-template-columns: 54px 1fr auto;
+  gap: 6px; align-items: baseline;
+  padding: 3px 4px; border-radius: 2px;
+  font-size: 9px; text-transform: none;
+}
+.ev-list li:hover { background: rgba(255,255,255,0.03); }
+.tag { font-weight: 500; font-size: 8px; letter-spacing: 0.5px; text-transform: uppercase; }
+.tag.create { color: var(--create); }
+.tag.modify { color: var(--txt-dim); }
+.tag.delete { color: var(--delete); }
+.tag.rename { color: var(--rename); }
+.ev-name { color: var(--txt); word-break: break-all; font-weight: 300; }
+.ev-ts { color: var(--txt-dim); font-size: 8px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+.note-block {
+  background: rgba(0,0,0,0.35); border: 1px solid var(--border);
+  border-left: 2px solid var(--accent); border-radius: 3px;
+  padding: 8px 10px; margin-bottom: 6px;
+}
+.note-meta { font-size: 8px; color: var(--accent); letter-spacing: 1px; margin-bottom: 4px; }
+.note-body { font-size: 10px; font-weight: 300; text-transform: none; line-height: 1.45; color: var(--txt); }
+
+.session-block {
+  background: rgba(0,0,0,0.3); border: 1px solid var(--border);
+  border-radius: 6px; padding: 10px; margin-bottom: 6px;
+}
+.session-block .t { font-size: 10px; font-weight: 500; letter-spacing: 1px; color: var(--accent); }
+.session-block .d { font-size: 10px; text-transform: none; font-weight: 300; margin-top: 4px; color: var(--txt); }
+.session-block .m { font-size: 8px; color: var(--txt-dim); margin-top: 4px; letter-spacing: 0.5px; }
+
+.empty {
+  color: var(--txt-dim); text-align: center; padding: 28px;
+  border: 1px solid var(--border); border-radius: 7px 2px 7px 2px;
+  letter-spacing: 1.5px; font-size: 10px;
+}
+.footer {
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  opacity: 0.8; margin-top: 8px; padding-bottom: 12px;
+}
+.footer .ft { font-size: 10px; letter-spacing: 2px; color: var(--txt); font-weight: 500; }
+.footer span { font-size: 8px; letter-spacing: 1.5px; color: var(--txt-dim); }
+
+.hidden { display: none !important; }
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-thumb { background: var(--border-hl); border-radius: 2px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="panel p-header">
+    <div class="brand">
+      <h1>CHANGELOG REVIEWER</h1>
+      <span class="badge">CHANGELOGGER.V02</span>
+    </div>
+    <div class="controls">
+      <span class="readout" id="statusReadout">[ IDLE ]</span>
+      <button class="btn accent" onclick="parseAll()">EXECUTE</button>
+      <button class="btn" onclick="exportMD()">EXPORT_MD</button>
+      <button class="btn" onclick="exportCSV()">EXPORT_CSV</button>
+      <button class="btn" onclick="copyOut()">COPY</button>
+      <button class="btn alert" onclick="clearAll()">CLEAR</button>
+    </div>
+  </header>
+
+  <section class="panel">
+    <span class="hud-title">INJECT_SOURCE</span>
+    <textarea id="input" placeholder="[ PASTE detailed-changelog.md ]"></textarea>
+    <div class="file-row">
+      <div class="file-wrap">
+        <button class="btn">LOAD_FILE</button>
+        <input type="file" id="file" accept=".md,.txt,.csv">
+      </div>
+      <span class="readout" id="fileName">[ NO_FILE ]</span>
+    </div>
+    <div class="chips">
+      <label class="chip on"><input type="checkbox" id="fNoise" checked> STRIP_NOISE</label>
+      <label class="chip on"><input type="checkbox" id="fNotes" checked> NOTES</label>
+      <label class="chip on"><input type="checkbox" id="fSessions" checked> SESSIONS</label>
+      <label class="chip on"><input type="checkbox" id="fDedupe" checked> DEDUPE</label>
+      <label class="chip"><input type="checkbox" id="fClient"> CLIENT_SUMMARY</label>
+    </div>
+  </section>
+
+  <section class="panel hidden" id="statsPanel">
+    <span class="hud-title">MASTER_READOUT</span>
+    <div class="metrics-row" id="stats"></div>
+  </section>
+
+  <section class="panel hidden" id="sessionsPanel">
+    <span class="hud-title">SESSIONS</span>
+    <div id="sessions"></div>
+  </section>
+
+  <section class="panel hidden" id="notesPanel">
+    <span class="hud-title">NOTES</span>
+    <div id="notes"></div>
+  </section>
+
+  <section class="panel hidden" id="foldersPanel">
+    <span class="hud-title">EVENTS_BY_FOLDER</span>
+    <div class="grid" id="grid"></div>
+  </section>
+
+  <div class="empty" id="empty">[ NO_ROUTING — INJECT CHANGELOG + EXECUTE ]</div>
+
+  <div class="footer">
+    <span class="ft">SurvivorF_Eliana | DAYZ HANDOFF</span>
+    <span>CHANGELOG REVIEWER — PARSE · STRIP · ARRANGE</span>
+  </div>
+</div>
+
+<script>
+const NOISE_FILE_RE = /(CodeLockPerms\.json|players\.db-journal|cache_lock|\.RPT$|\.ADM$|script_\d|crash_\d|error_\d|warning_\d|GameLabsCore\.log|WebApiLog_|EventManagerLog_|ExpLog_|AirdropManager\.log|ServerPanel_.*\.log|BS_KeyCard_.*\.log|LBmaster_.*\.log|RFFSHeli_.*\.log|appinfo_log|configstore_log|connection_log|systemperf|systemmanager|systemdock|systemdisplay|systemaudio|stats_log|mod\.cpp$)/i;
+
+let parsed = { sessions: [], events: [], notes: [], rawMeta: {} };
+let lastExport = "";
+const $ = id => document.getElementById(id);
+
+document.querySelectorAll(".chip").forEach(chip => {
+  const inp = chip.querySelector("input");
+  chip.classList.toggle("on", inp.checked);
+  chip.addEventListener("click", e => {
+    if (e.target !== inp) inp.checked = !inp.checked;
+    chip.classList.toggle("on", inp.checked);
+  });
+});
+
+$("file").addEventListener("change", async e => {
+  const f = e.target.files[0];
+  if (!f) return;
+  $("input").value = await f.text();
+  $("fileName").textContent = f.name;
+  $("statusReadout").textContent = "[ LOADED ]";
+});
+
+function folderOf(p) {
+  p = String(p).replace(/\\/g, "/");
+  const i = p.lastIndexOf("/");
+  return i === -1 ? "." : p.slice(0, i);
+}
+function basenameOf(p) {
+  p = String(p).replace(/\\/g, "/");
+  const i = p.lastIndexOf("/");
+  return i === -1 ? p : p.slice(i + 1);
+}
+
+function parseTableLine(line) {
+  if (!line.startsWith("|") || line.includes("Local TS") || line.includes("---")) return null;
+  const cols = line.split("|").map(s => s.trim());
+  if (cols.length < 6) return null;
+  const path = (cols[4] || "").replace(/^`|`$/g, "");
+  const action = (cols[5] || "").toUpperCase();
+  if (!path || !["CREATE","MODIFY","DELETE","MERGE","BACKUP","VALIDATE","RESTORE","RENAME"].includes(action)) return null;
+  return {
+    ts: cols[1] || "", path, action,
+    folder: folderOf(path), file: basenameOf(path), source: "table"
+  };
+}
+
+function parseAll() {
+  const text = $("input").value;
+  if (!text.trim()) { alert("INJECT SOURCE FIRST"); return; }
+
+  const events = [], notes = [], sessions = [], meta = {};
+  const lines = text.split(/\r?\n/);
+  let currentFolder = ".";
+  let currentSession = null;
+
+  const rootM = text.match(/\*\*Root:\*\*\s*`([^`]+)`/);
+  if (rootM) meta.root = rootM[1];
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
+    if (/^##\s*🚀\s*SESSION/i.test(line) || /^##\s*SESSION/i.test(line)) {
+      currentSession = { title: line.replace(/^##\s*/, ""), start: "", desc: "" };
+      sessions.push(currentSession);
+      continue;
+    }
+    if (currentSession && /\*\*Local:\*\*/.test(line) && !currentSession.start) {
+      currentSession.start = line; continue;
+    }
+    if (currentSession && /\*\*What is being done:\*\*/i.test(line)) {
+      const desc = [];
+      for (let j = i + 1; j < lines.length; j++) {
+        if (/^###|^---|^##|^📂/.test(lines[j])) break;
+        if (lines[j].trim()) desc.push(lines[j].trim());
+      }
+      currentSession.desc = desc.join(" ");
+      continue;
+    }
+
+    const fm = line.match(/^📂\s*`([^`]+)`/);
+    if (fm) { currentFolder = fm[1]; continue; }
+
+    const em = line.match(/•\s*(?:✨|✏️|🗑️|🔀)?\s*\*\*\[([A-Z]+)\]\*\*\s*`([^`]+)`\s*(?:·\s*([0-9\-:\s]+))?/);
+    if (em) {
+      const action = em[1];
+      let fileOrPath = em[2];
+      const ts = (em[3] || "").trim();
+      let folder = currentFolder, file = fileOrPath;
+      if (action === "RENAME" && fileOrPath.includes("→")) {
+        events.push({ ts, action: "RENAME", path: fileOrPath, folder, file: fileOrPath });
+        continue;
+      }
+      if (fileOrPath.includes("/")) {
+        folder = folderOf(fileOrPath);
+        file = basenameOf(fileOrPath);
+      }
+      events.push({ ts, action, path: folder === "." ? file : folder + "/" + file, folder, file });
+      continue;
+    }
+
+    const lm = line.match(/^\-\s*\*\*\[([A-Z]+)\]\*\*\s*`([^`]+)`\s*(?:·\s*([0-9\-:\s]+))?/);
+    if (lm) {
+      const path = lm[2].replace(/\\/g, "/");
+      events.push({ ts: (lm[3] || "").trim(), action: lm[1], path, folder: folderOf(path), file: basenameOf(path) });
+      continue;
+    }
+
+    const te = parseTableLine(line);
+    if (te) { events.push(te); continue; }
+
+    if (/^>\s*.*\*\*NOTE\*\*/i.test(line) || /^>\s*[📝⚠️✅🔥📦🧹💡‼️]/.test(line)) {
+      const noteLines = [line.replace(/^>\s?/, "")];
+      for (let j = i + 1; j < lines.length; j++) {
+        if (!lines[j].startsWith(">")) break;
+        noteLines.push(lines[j].replace(/^>\s?/, ""));
+        i = j;
+      }
+      notes.push({ text: noteLines.join(" "), ts: (line.match(/\[([0-9\-:\s]+)/) || [])[1] || "" });
+    }
+  }
+
+  parsed = { sessions, events, notes, rawMeta: meta };
+  $("statusReadout").textContent = "[ PARSED ]";
+  render();
+}
+
+function isNoise(ev) {
+  if (!ev || !ev.path) return false;
+  const p = ev.path.replace(/\\/g, "/");
+  if (NOISE_FILE_RE.test(p) || NOISE_FILE_RE.test(ev.file || "")) return true;
+  if (/CodeLock\/Logs/i.test(p) || /\/LOGs\s*\(/i.test(p)) return true;
+  return false;
+}
+
+function applyFilters(events, notes) {
+  let ev = events.slice();
+  if ($("fNoise").checked) {
+    const byKey = new Map(), kept = [];
+    for (const e of ev) {
+      if (isNoise(e) && e.action === "MODIFY") {
+        const k = e.action + "::" + e.path;
+        if (!byKey.has(k)) byKey.set(k, { first: e, last: e, count: 1 });
+        else { const o = byKey.get(k); o.last = e; o.count++; }
+        continue;
+      }
+      if (isNoise(e) && (e.action === "DELETE" || e.action === "CREATE")) {
+        const k = "N::" + e.folder + "::" + e.action;
+        if (!byKey.has(k)) byKey.set(k, { first: e, last: e, count: 1, noiseGroup: true });
+        else { const o = byKey.get(k); o.last = e; o.count++; }
+        continue;
+      }
+      kept.push(e);
+    }
+    for (const o of byKey.values()) {
+      if (o.noiseGroup) {
+        kept.push({ ...o.first, file: `(${o.count} noise)`, path: o.first.folder + "/(noise)", ts: o.first.ts, collapsed: o.count });
+      } else if (o.count === 1) kept.push(o.first);
+      else kept.push({ ...o.first, ts: o.first.ts + " → " + o.last.ts, file: o.first.file + ` ×${o.count}`, collapsed: o.count });
+    }
+    ev = kept;
+  }
+  if ($("fDedupe").checked) {
+    const seen = new Set();
+    ev = ev.filter(e => {
+      const k = e.action + "|" + e.path + "|" + (e.collapsed || "");
+      if (seen.has(k)) return false;
+      seen.add(k); return true;
+    });
+  }
+  return { events: ev, notes: $("fNotes").checked ? notes : [] };
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
+
+function render() {
+  const { events, notes } = applyFilters(parsed.events, parsed.notes);
+  const clientFacing = $("fClient").checked;
+  const counts = { CREATE: 0, MODIFY: 0, DELETE: 0, RENAME: 0 };
+  events.forEach(e => { counts[e.action] = (counts[e.action] || 0) + (e.collapsed || 1); });
+
+  $("statsPanel").classList.remove("hidden");
+  $("stats").innerHTML = `
+    <div class="metric"><span class="k">SHOWN</span><span class="v accent">${events.length}</span></div>
+    <div class="metric"><span class="k">RAW</span><span class="v">${parsed.events.length}</span></div>
+    <div class="metric"><span class="k">✨ CREATE</span><span class="v create">${counts.CREATE||0}</span></div>
+    <div class="metric"><span class="k">✏️ MODIFY</span><span class="v modify">${counts.MODIFY||0}</span></div>
+    <div class="metric"><span class="k">🗑️ DELETE</span><span class="v delete">${counts.DELETE||0}</span></div>
+    <div class="metric"><span class="k">🔀 RENAME</span><span class="v rename">${counts.RENAME||0}</span></div>
+    <div class="metric"><span class="k">📝 NOTES</span><span class="v accent">${notes.length}</span></div>
+  `;
+
+  if ($("fSessions").checked && parsed.sessions.length) {
+    $("sessionsPanel").classList.remove("hidden");
+    $("sessions").innerHTML = parsed.sessions.map((s, i) => `
+      <div class="session-block">
+        <div class="t">SESSION_${String(i+1).padStart(2,"0")}</div>
+        ${s.desc ? `<div class="d">${esc(s.desc)}</div>` : ""}
+        <div class="m">${esc(s.start || "")}</div>
+      </div>
+    `).join("");
+  } else {
+    $("sessionsPanel").classList.add("hidden");
+  }
+
+  if (notes.length) {
+    $("notesPanel").classList.remove("hidden");
+    $("notes").innerHTML = notes.map(n => `
+      <div class="note-block">
+        <div class="note-meta">NOTE ${esc(n.ts || "")}</div>
+        <div class="note-body">${esc(n.text)}</div>
+      </div>
+    `).join("");
+  } else {
+    $("notesPanel").classList.add("hidden");
+  }
+
+  const byFolder = new Map();
+  for (const e of events) {
+    if (!byFolder.has(e.folder)) byFolder.set(e.folder, []);
+    byFolder.get(e.folder).push(e);
+  }
+  const folders = [...byFolder.keys()].sort();
+
+  $("empty").classList.toggle("hidden", folders.length > 0 || notes.length > 0);
+  $("foldersPanel").classList.toggle("hidden", folders.length === 0);
+
+  $("grid").innerHTML = folders.map(f => {
+    const list = byFolder.get(f);
+    const c = { CREATE:0, MODIFY:0, DELETE:0, RENAME:0 };
+    list.forEach(e => { c[e.action] = (c[e.action]||0) + (e.collapsed||1); });
+    const show = clientFacing ? list.filter(e => !isNoise(e)).slice(0, 5) : list;
+    return `
+      <div class="folder-panel">
+        <div class="folder-head">
+          <div class="folder-path">${esc(f)}</div>
+          <div class="pills">
+            ${c.CREATE ? `<span class="pill create">${c.CREATE} C</span>` : ""}
+            ${c.MODIFY ? `<span class="pill">${c.MODIFY} M</span>` : ""}
+            ${c.DELETE ? `<span class="pill delete">${c.DELETE} D</span>` : ""}
+            ${c.RENAME ? `<span class="pill rename">${c.RENAME} R</span>` : ""}
+          </div>
+        </div>
+        <ul class="ev-list">
+          ${show.map(e => `
+            <li>
+              <span class="tag ${e.action.toLowerCase()}">${e.action}</span>
+              <span class="ev-name">${esc(e.file)}</span>
+              ${e.ts ? `<span class="ev-ts">${esc(e.ts)}</span>` : ""}
+            </li>
+          `).join("")}
+          ${clientFacing && list.length > show.length ? `<li><span class="tag modify">…</span><span class="ev-name">${list.length - show.length} more</span></li>` : ""}
+        </ul>
+      </div>`;
+  }).join("");
+
+  let md = `# Changelog (reviewed)\n`;
+  if (parsed.rawMeta.root) md += `**Root:** \`${parsed.rawMeta.root}\`\n`;
+  md += `**Raw → shown:** ${parsed.events.length} → ${events.length}\n\n`;
+  if (notes.length) {
+    md += `## Notes\n`;
+    notes.forEach(n => { md += `- ${n.text}\n`; });
+    md += `\n`;
+  }
+  md += `## Events by folder\n\n`;
+  folders.forEach(f => {
+    md += `📂 \`${f}\`\n`;
+    byFolder.get(f).forEach(e => {
+      const icon = e.action === "CREATE" ? "✨" : e.action === "DELETE" ? "🗑️" : e.action === "RENAME" ? "🔀" : "✏️";
+      md += `   • ${icon} **[${e.action}]** \`${e.file}\`${e.ts ? "  · " + e.ts : ""}\n`;
+    });
+    md += `\n`;
+  });
+  lastExport = md;
+}
+
+function exportMD() {
+  if (!lastExport) parseAll();
+  if (!lastExport) return;
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([lastExport], { type: "text/markdown" }));
+  a.download = "Changelog_reviewed.md";
+  a.click();
+}
+function exportCSV() {
+  const { events } = applyFilters(parsed.events, parsed.notes);
+  let csv = "Timestamp,Action,Folder,File,Path,Collapsed\n";
+  events.forEach(e => {
+    csv += [e.ts, e.action, e.folder, e.file, e.path, e.collapsed || 1]
+      .map(c => `"${String(c).replace(/"/g,'""')}"`).join(",") + "\n";
+  });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+  a.download = "Changelog_reviewed.csv";
+  a.click();
+}
+function copyOut() {
+  if (!lastExport) parseAll();
+  navigator.clipboard.writeText(lastExport || "").then(() => {
+    $("statusReadout").textContent = "[ COPIED ]";
+  });
+}
+function clearAll() {
+  $("input").value = "";
+  $("fileName").textContent = "[ NO_FILE ]";
+  $("statusReadout").textContent = "[ IDLE ]";
+  ["statsPanel","sessionsPanel","notesPanel","foldersPanel"].forEach(id => $(id).classList.add("hidden"));
+  $("grid").innerHTML = "";
+  $("empty").classList.remove("hidden");
+  parsed = { sessions: [], events: [], notes: [], rawMeta: {} };
+  lastExport = "";
+}
+</script>
+</body>
+</html>
